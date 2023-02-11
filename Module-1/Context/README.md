@@ -1,51 +1,129 @@
-# Instructions
+# How re-rendering works with Context
+In this reading you will learn about the default behavior of React rendering and when context is used. You will discover how to prevent unnecessary top-level re-renders with React.memo and how object references work in JavaScript. You will also learn how to utilize the useMemo hook to guarantee object references don’t change during re-rendering.
 
-## Task
+So far, you have learned that when a component consumes some context value and the value of this context changes, that component re-renders.
 
-You've learned about React Context and how it allows you to define global state without passing individual props down through each component.
-One of the most common use cases for Context is to define a theme for your application. In this exercise, you'll create a light/dark theme switcher.
+But what happens with all components in between? Is React wise enough to only re-render the consumers and bypass the intermediary components in the tree? Well, as it turns out, that doesn’t always happen and extra care should be taken when designing your React Context.
 
-The starter code includes all the necessary UI elements, as well as switch component to toggle the theme. Your goal is to implement the missing functionality inside `ThemeContext.js`.
-`ThemeContext` already exports a `ThemeProvider` component and a `useTheme` hook.
-At the moment, they don't do anything and return dummy values. 
+When it comes to the default behavior of React rendering, if a component renders, React will recursively re-render all its children regardless of props or context. Let’s illustrate this point with an example that uses some context.
 
-![Alt text](images/image1.png)
+Imagine the following component structure, where the top level component injects a Context provider at the top: 
 
-You'll need to implement both `ThemeProvider` component and `useTheme` hook inside `ThemeContext.js` file to complete this exercise.
+`App (ContextProvider) > A > B > C`
+```
+const App = () => {
+return (
+   <AppContext.Provider>
+     <ComponentA />
+   </AppContext.Provider>
+ );
+};
 
-`ThemeProvider` should render a context provider component and inject as the context value an object with 2 properties: a `theme` property that is a string that can be either `light` or `dark` and a function named `toggleTheme` that allows to toggle the theme. 
-`useTheme` hook should return that context object.
+const ComponentA = () => <ComponentB />;
+const ComponentB = () => <ComponentC />;
+const ComponentC = () => null;
+```
+If the outermost App component re-renders for whatever reason, all ComponentA, ComponentB and ComponentC components will re-render as well, following this order: 
 
-**Note:** Before you begin, make sure you understand how to work with the Coursera Code Lab for the [Advanced React course](https://www.coursera.org/learn/advanced-react/supplement/htaLX/working-with-labs-in-this-course).
+`App (ContextProvider) -> A -> B -> C`
 
-If you run `npm start` and view the app in the browser, you'll notice that the starting React app works as is.
-The app outputs a simple view with a header, page and a switch widget in the top right corner to change the theme.
+If some of your top level components are complex in nature, this could result in some performance hit. To mitigate this issue, you can make use of the top level API React.memo().
 
-## Steps
+If your component renders the same result given the same props, you can wrap it in a call to React.memo for a performance boost by memoizing the result.
 
-### **Step 1**
+Memoization is a programming technique that accelerates performance by caching the return values of expensive function calls.
 
-Open the `ThemeContext.js` file.
+This means that React will skip rendering the component, and reuse the last rendered result. This is a trivial case for ComponentA, since it doesn’t receive any props.
 
-Create a `ThemeContext` object using `React.createContext()`
+`const ComponentA = React.memo(() => <ComponentB />);`
 
-Implement the `ThemeProvider` component. It should accept a `children` prop and return a `ThemeContext.Provider` component.
-The `ThemeContext.Provider` receives an object as its `value` prop, with a `theme` string and a `toggleTheme` function.
+React.memo takes the component definition as a first argument. An optional second argument can be included if you would like to specify some custom logic that defines when the component should re-render based on previous and current props.
 
-`toggleTheme` should toggle the theme between `light` and `dark`.
+After that little adjustment, you will prevent any rendering from happening in all ComponentA, ComponentB and ComponentC if the App component re-renders.
+```
+const App = () => {
+return (
+   <AppContext.Provider>
+     <ComponentA />
+   </AppContext.Provider>
+ );
+};
 
-### **Step 2**
+const ComponentA = React.memo(() => <ComponentB />);
+const ComponentB = () => <ComponentC />;
+const ComponentC = () => null;
+```
+A good rule of thumb is to wrap the React component right after your context provider with React.memo.
 
-Implement the `useTheme` hook. It should return the `theme` and `toggleTheme` values from the `ThemeContext`.
+In real-life applications, you will find yourself in need of passing several pieces of data as context value, rather than a single primitive like a string or number, so you’ll be working most likely with JavaScript objects.
 
-### **Step 3**
+Now, according to React context rules, all consumers that are descendants of a provider will re-render whenever the provider’s value prop changes.
 
-Open the `Switch/index.js` file. Add an `onChange` prop to the input element and pass as the event handler a callback function to change the theme.
-You don’t need to use the event argument in this case.
+Let’s go through the following scenario built upon the previous example, where the context value that gets injected is defined as an object called value with two properties, ‘a’ and ‘b’, being both strings. Also, ComponentC is now a consumer of context, so any time the provider value prop changes, ComponentC will re-render.
+```
+const App = () => {
+  const value = {a: 'hi', b: 'bye'};
+  return (
+    <AppContext.Provider value={value}>
+      <ComponentA />
+    </AppContext.Provider>
+  );
+};
 
-### **Step 4**
+const ComponentA = React.memo(() => <ComponentB />);
+const ComponentB = () => <ComponentC />;
+const ComponentC = () => {
+  const contextValue = useContext(AppContext);
+  return null;
+};
+```
+Imagine that the value prop from the provider changes to {a: ‘hello’, b: ‘bye’}.
 
-Verify that the app works as expected. You should be able to toggle the theme between light and dark.
-Notice how the background color of the page changes, as well as the color of the text.
+If that happens, the sequence of re-renders would be:
 
-![Alt text](images/image2.png)
+App (ContextProvider) -> C
+
+That’s all fine and expected, but what would happen if the App component re-renders for any other reason and the provider value doesn’t change at all, being still {a: ‘hi’, b: ‘bye’}? 
+
+It may be a surprise to you to find out that the sequence of re-renders is the same as before:
+
+App (ContextProvider) -> C
+
+Even though the provider value doesn’t seem to change, ComponentC gets re-rendered.
+
+To understand what’s happening, you need to remember that in JavaScript, the below assertion is true:
+
+{a: ‘hi’, b: ‘bye’} !== {a: ‘hi’, b: ‘bye’}
+
+That is because object comparison in JavaScript is done by reference. Every time a new re-render happens in the App component, a new instance of the value object is created, resulting in the provider performing a comparison against its previous value and determining that it has changed, hence informing all context consumers that they should re-render.
+
+This problem can be resolved by using the useMemo hook from React as follows. 
+```
+const App = () => {
+  const a = 'hi';
+  const b = 'bye';
+  const value = useMemo(() => ({a, b}), [a, b]);
+
+  return (
+    <AppContext.Provider value={value}>
+      <ComponentA />
+    </AppContext.Provider>
+  );
+};
+
+const ComponentA = React.memo(() => <ComponentB />);
+const ComponentB = () => <ComponentC />;
+const ComponentC = () => {
+  const contextValue = useContext(AppContext);
+  return null;
+};
+```
+ooks will be covered in depth in the next module, so don’t worry too much if this is new for you.
+
+For the purpose of this example, it suffices to say that useMemo will memoize the returned value from the function passed as the first argument and will only re-run the computation if any of the values are passed into the array as a second argument change.
+
+With that implementation, if the App re-renders for any other reason that does not change any of ‘a’ or ‘b’ values, the sequence of re-renders will be as such:
+
+App (ContextProvider)
+
+This is the desired result, avoiding an unnecessary re-render on ComponentC. useMemo guarantees keeping the same object reference for the value variable and since that’s assigned to the provider’s value, it determines that the context has not changed and should not notify any consumer.
