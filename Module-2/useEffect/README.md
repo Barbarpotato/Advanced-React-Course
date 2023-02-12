@@ -74,7 +74,8 @@ Returning a function is optional and it’s the mechanism React provides in case
 
 React will make sure to run the cleanup logic when it’s needed. The execution will always happen when the component unmounts. However, in effects that run after every render and not just once, React will also clean up the effect from the previous render before running the new effect next time.
 
-# Data fetching using hooksYou learned more about fetching data using hooks and that fetching data from a third-party API is considered a side-effect that requires the use of the useEffect hook to deal with the Fetch API calls in React.
+# Data fetching using hooks
+You learned more about fetching data using hooks and that fetching data from a third-party API is considered a side-effect that requires the use of the useEffect hook to deal with the Fetch API calls in React.
 
 You also explored how the response from fetching third-party data might fail, or be delayed, and that it can be useful to provide different renders, based on whether or not the data has been received.
 
