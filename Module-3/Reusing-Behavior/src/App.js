@@ -25,14 +25,15 @@ const MousePosition = ({ render }) => {
 
 const PanelMouseLogger = () => {
   return (
-    <MousePosition render={(mousePosition) => (
-      <div className="BasicTracker" >
-        <p>Mouse position:</p>
+    <div className="BasicTracker" >
+      <p>Mouse position:</p>
+      <MousePosition render={(mousePosition) => (
         <div className="Row">
           <span>x: {mousePosition.x}</span>
           <span>y: {mousePosition.y}</span>
         </div>
-      </div>)} />
+      )} />
+    </div>
   );
 };
 

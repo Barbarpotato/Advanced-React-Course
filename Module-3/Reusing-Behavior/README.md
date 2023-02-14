@@ -58,7 +58,7 @@ const EnhancedComponent = HOC(WrappedComponent, config)
 ```
 
 # Render Props
-The render props pattern is a way to share functionality between components without repeating code. The official React docs define it as —
+The render props pattern is a way to share functionality between components without repeating code. The official React docs define it as — <br/>
 `The term “render prop” refers to a simple technique for sharing code between React components using a prop whose value is a function.`
 For example:
 ```js
