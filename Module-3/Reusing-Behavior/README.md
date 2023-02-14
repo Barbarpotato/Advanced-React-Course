@@ -33,6 +33,7 @@ const HOC = (WrappedComponent) => {
 }
 export default HOC;
 ```
+`We can receive the NewComponent props by initiate the props from the identical functionality component`
 
 ## Pass unrelated props through to the Wrapped Component
 HOC adds features to a component. In other words, it enhances it. That's why they shouldn't drastically alter their original contract. Instead, the component returned from a HOC is expected to have a similar interface to the wrapped component.
