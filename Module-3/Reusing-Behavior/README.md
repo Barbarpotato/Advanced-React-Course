@@ -79,11 +79,15 @@ const DataProvider = ({render}) => {
     return render(data)
 }
 
-<DataProvider render={data => (
-  <React.Fragment>
-  <h1>Hello {data.username}</h1>
-  <p>Your Current Location: {data.location}</p>
-  </React.Fragment>
-)}/>
+const userIntroduction = () => {
+    return(
+        <DataProvider render={data => (
+            <React.Fragment>
+                <h1>Hello {data.username}</h1>
+                <p>Your Current Location: {data.location}</p>
+            </React.Fragment>
+        )}/>
+    )
+};
 ```
 By using a prop to define what is rendered, the component just injects functionality without needing to know how it is being applied to the UI. Let’s take a look at an example to understand what this actually means.
