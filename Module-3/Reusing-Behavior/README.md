@@ -21,17 +21,48 @@ const HOC = (WrappedComponent) => {
 ```
 instead:
 ```js
-const HOC = (WrappedComponent) => {
+const withMouseOver = (WrappedComponent) => {
     return (props) => {
         //Doing some Logic here using built in react hook? Optional.
+         const [mousePosition, setMousePosition] = useState({
+            x: 0,
+            y: 0,
+        });
+
+        useEffect(() => {
+            const handleMousePositionChange = (e) => {
+            setMousePosition({ x: e.clientX, y: e.clientY })
+        };
+
+        window.addEventListener("mousemove", handleMousePositionChange);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMousePositionChange);
+        };
+
+        }, []);
+
         return (
             // Passing props to the component that has the identical funcionalities
             // the props will access by the WrappedCompnent and process the data.
-            <WrappedComponent />
+            <WrappedComponent  mousePosition={mousePosition}/>
         )
     }; 
 }
-export default HOC;
+export default withMouseOver;
+```
+```js
+const PointMouseLogger = ({mousePosition}) => {
+
+  return (
+      <p>
+        ({mousePosition.x}, {mousePosition.y})
+      </p>
+  )
+};
+
+const PointMouseTracker = withMouseOver(PointMouseOver);
+
 ```
 `We can receive the NewComponent props by initiate the props from the identical functionality component`
 
