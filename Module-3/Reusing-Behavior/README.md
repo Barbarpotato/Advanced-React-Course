@@ -30,7 +30,6 @@ const HOC = (WrappedComponent) => {
             <WrappedComponent />
         )
     }; 
-    return NewComponent
 }
 export default HOC;
 ```
